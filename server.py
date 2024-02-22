@@ -54,7 +54,7 @@ def create_acknowledgement(input_n):
     # This function retrieves the S value from the initialization message
     # Then, return acknowledgement message
     empty_binary = b'\x00' * 32 # empty 32-byte payload
-    message = create_struct(ACKNOWLEDGEMENT_TYPE_VALUE, 0, socket.htonl(input_n) * MULTIPLIER, empty_binary) # TODO: ASK about converting it to network again to multiply, whats the point of converting to host initially?
+    message = create_struct(ACKNOWLEDGEMENT_TYPE_VALUE, 0, socket.htonl(input_n) * MULTIPLIER, empty_binary) 
     return message
 
 
@@ -63,7 +63,7 @@ def check_initialization(encoded_data):
         initial_message = open_struct(encoded_data)
         num_hash_requests = socket.ntohl(initial_message[1])  # Block sizes this client will send
         type_val = socket.ntohs(initial_message[0])
-        if type_val != socket.ntohs(INITIALIZATION_TYPE_VAL):       # TODO: Ask if this is correct, or should i check it w/out the ntohs
+        if type_val != socket.ntohs(INITIALIZATION_TYPE_VAL):   
             print("SERVER: Invalid Type Value")
             return False
         return num_hash_requests
@@ -95,7 +95,7 @@ def get_hashed_data(hash_request):
     request_payload = hash_request[3] + hash_salt.encode()  # HashRequest Data + UTF-8 Encoded Salt
 
     hash_and_salt = hashlib.sha512(request_payload).hexdigest()
-    #request_i = TODO: maybe this is the i for the request?
+    request_i = socket.htons(request_i) 
     return create_struct(HASH_RESPONSE_TYPE_VALUE, request_i, len(hash_and_salt), hash_and_salt.encode())
 
 
@@ -163,11 +163,12 @@ if __name__ == '__main__':
                                 print("Acknowledgment sent.")
                         # No data
                         else:
+                            print("Client disconnected.")
                             clients.remove(s)
                             s.close()
                     # Hash-Request
                     else:
-                        hash_request = check_hash_request(s.recv(n_sizes[s]))
+                        hash_request = check_hash_request(s.recv(1024))
                         print("Hash Request received: ", hash_request)
 
                         if hash_request:
@@ -176,6 +177,7 @@ if __name__ == '__main__':
                             print("Hash Response sent.")
                         # No more data in file
                         else:
+                            print("Client disconnected.")
                             del n_sizes[s]
                             clients.remove(s)
                             s.close()
