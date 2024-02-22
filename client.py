@@ -59,12 +59,11 @@ def create_initialization(hash_requests):
     return message
 
 
-# TODO: Originally, had hash_count, block_size, current_block. I removed block_size because I didn't know what to do with it
 def create_hash_request(hash_count, current_block):
     # This function will create a Hash Request
     # Then, return the message as a struct obj
 
-    # hash_count = TODO: ask reasoning behind this line? like hash_count is already in net byte order, and you can't increment it here
+    hash_count = socket.ntohs(hash_count)
     block_len = len(current_block)
     struct_hash_message = create_struct(HASH_REQUEST_TYPE_VAL, hash_count, block_len, current_block.encode())
 
@@ -142,13 +141,15 @@ if __name__ == '__main__':
 
     # Create initialization message and send to the server
     initialization_message = create_initialization(hash_block_size)
+    if not initialization_message:
+        sys.exit(2)
     server_socket.sendall(initialization_message)
     print("Initialization sent.")
 
     # Acknowledgement Message Verification
-    length = check_acknowledgement(server_socket.recv(1024))
-    print("Length received: ", length)
-    
+    length = check_acknowledgement(server_socket.recv(1024))  
+    if not length:
+        sys.exit(2)    
 
     # Let's keep track of hash count, and our new hashed data file
     # you can write the hash values received from the server in this file
@@ -161,7 +162,7 @@ if __name__ == '__main__':
         server_socket.sendall(request_message)
         print("Hash Request sent.")
 
-        response_type, response_i, response_len, response_payload = check_hash_response(server_socket.recv(length))
+        response_type, response_i, response_len, response_payload = check_hash_response(server_socket.recv(1024))
         try:
             print("Writing {} {} : {} {} to outfile-cllientIP.txt\n".format(block.strip(), count, response_payload, response_i))
             hashed_data.write("{} {}: {} {}\n".format(block.strip(), count, response_payload, response_i)) 
