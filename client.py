@@ -40,28 +40,67 @@ HASH_RESPONSE_TYPE_VALUE = 4
 
 
 def create_struct(short_int1, long_int1, long_int2, str_32_byte):
-    # This function will be used to create a universal struct object
+    """
+    Creates a universal struct object.
+
+    Args:
+        short_int1 (int): First short integer.
+        long_int1 (int): First long integer.
+        long_int2 (int): Second long integer.
+        str_32_byte (bytes): 32-byte string.
+
+    Returns:
+        bytes: Struct object.
+    """
+
     message = struct.pack('!HLL32s', short_int1, long_int1, long_int2, str_32_byte)
     return message
 
 
 def open_struct(struct_obj):
-    # This function will be used to open a universal struct object
+    """
+    Unpacks a universal struct object and returns its components.
+
+    Args:
+        struct_obj (bytes): Struct object to be unpacked.
+
+    Returns:
+        tuple: Tuple containing short integer, two long integers, and a 32-byte string.
+    """
+
     message = struct.unpack('!HLL32s', struct_obj)
     return message  # Returns array [short, long, long, 32-byte string]
 
 
 def create_initialization(hash_requests):
-    # This function will be used to create the initialization message to send to the server using struct
-    # Then, return the message
+    """
+    Creates an initialization message with given hash requests to 
+    send to the server using struct. Then, returns the message.
+
+    Args:
+        hash_requests (int): Number of hash requests.
+
+    Returns:
+        bytes: Initialization message.
+    """
+
     empty_binary = b'\x00' * 32 # empty 32-byte payload
     message = create_struct(INITIALIZATION_TYPE_VAL, hash_requests, 0, empty_binary)
     return message
 
 
 def create_hash_request(hash_count, current_block):
-    # This function will create a Hash Request
-    # Then, return the message as a struct obj
+    """
+    Creates a hash request message. Then, returns the 
+    message as a struct object.
+
+    Args:
+        hash_count (int): Hash count.
+        current_block (str): Current block data.
+
+    Returns:
+        bytes: Hash request message.
+    """
 
     hash_count = socket.ntohs(hash_count)
     block_len = len(current_block)
@@ -71,6 +110,16 @@ def create_hash_request(hash_count, current_block):
 
 
 def check_acknowledgement(encoded_data):
+    """
+    Checks the acknowledgement message.
+
+    Args:
+        encoded_data (bytes): Encoded data to be checked.
+
+    Returns:
+        bool or int: False if invalid message, otherwise returns the length from acknowledgment message.
+    """
+
     try:
         initial_message = open_struct(encoded_data)
         type_val = socket.ntohs(initial_message[0])
@@ -84,6 +133,16 @@ def check_acknowledgement(encoded_data):
 
 
 def check_hash_response(encoded_data):
+    """
+    Checks the hash response message.
+
+    Args:
+        encoded_data (bytes): Encoded data to be checked.
+
+    Returns:
+        bool or tuple: False if invalid message, otherwise returns the struct object.
+    """
+
     try:
         initial_message = open_struct(encoded_data)
         type_val = socket.ntohs(initial_message[0])
@@ -97,9 +156,18 @@ def check_hash_response(encoded_data):
 
 
 def connect_server(ip, port):
-    # This function will be used to create a socket and connect to server
-    # Then, return the socket object
+    """
+    Create a socket and connect to server. Then,
+    return the socket object.
 
+    Args:
+        ip (str): Server IP address.
+        port (int): Server port number.
+
+    Returns:
+        socket.socket: Socket object for communication with the server.
+    """
+    
     tcp_socket = socket.socket()
     tcp_socket.connect((ip, port))
 
