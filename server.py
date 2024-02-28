@@ -39,26 +39,65 @@ MULTIPLIER = 40
 
 
 def create_struct(short_int1, long_int1, long_int2, str_32_byte):
-    # This function will be used to create a universal struct object
+    """
+    Creates a universal struct object.
+
+    Args:
+        short_int1 (int): First short integer.
+        long_int1 (int): First long integer.
+        long_int2 (int): Second long integer.
+        str_32_byte (bytes): 32-byte string.
+
+    Returns:
+        bytes: Struct object.
+    """
+
     message = struct.pack('!HLL32s', short_int1, long_int1, long_int2, str_32_byte)
     return message
     
 
 def open_struct(struct_obj):
-    # This function will be used to open a universal struct object
+    """
+    Unpacks a universal struct object and returns its components.
+
+    Args:
+        struct_obj (bytes): Struct object to be unpacked.
+
+    Returns:
+        tuple: Tuple containing short integer, two long integers, and a 32-byte string.
+    """
+
     message = struct.unpack('!HLL32s', struct_obj)
     return message  # Returns array [short, long, long, 32-byte string]
 
 
 def create_acknowledgement(input_n):
-    # This function retrieves the S value from the initialization message
-    # Then, return acknowledgement message
+    """
+    Creates an acknowledgement message.
+
+    Args:
+        input_n: the s value from the initialization message.
+
+    Returns:
+        bytes: Acknowledgement message.
+    """
+
     empty_binary = b'\x00' * 32 # empty 32-byte payload
     message = create_struct(ACKNOWLEDGEMENT_TYPE_VALUE, 0, socket.htonl(input_n) * MULTIPLIER, empty_binary) 
     return message
 
 
 def check_initialization(encoded_data):
+    """
+    Checks the initialization message.
+
+    Args:
+        encoded_data: Encoded data to be checked.
+
+    Returns:
+        int or False: Number of hash requests if valid, otherwise False.
+    """
+
     try:
         initial_message = open_struct(encoded_data)
         num_hash_requests = socket.ntohl(initial_message[1])  # Block sizes this client will send
@@ -72,6 +111,16 @@ def check_initialization(encoded_data):
         return False
     
 def check_hash_request(encoded_data):
+    """
+    Checks the hash request message.
+
+    Args:
+        encoded_data: Encoded data to be checked.
+
+    Returns:
+        bool or tuple: False if invalid message, otherwise returns the struct object.
+    """
+
     try:
         initial_message = open_struct(encoded_data)
         type_val = socket.ntohs(initial_message[0])
@@ -85,8 +134,15 @@ def check_hash_request(encoded_data):
 
 
 def get_hashed_data(hash_request):
-    # This function will receive an unpacked struct representing our hash request
-    # Then, return hashed data and hash response
+    """
+    Calculates hash for the given request.
+
+    Args:
+        hash_request: Hash request object.
+
+    Returns:
+        bytes: Hash response message.
+    """
     
     # Extract variables
     request_type = hash_request[0]  # HashRequest Type
@@ -100,8 +156,16 @@ def get_hashed_data(hash_request):
 
 
 def start_server(port):
-    # This function will create our TCP Server Socket, start listening, then return the Socket Object
+    """
+    Starts the server socket.
 
+    Args:
+        port: Port number for the server to bind to.
+
+    Returns:
+        socket.socket: Server socket object.
+    """
+    
     tcp_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_server_socket.setblocking(0)  # Allow multiple connections
     tcp_server_socket.bind(("127.0.0.1", port))  # Start listening!
